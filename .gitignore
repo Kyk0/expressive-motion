@@ -1,0 +1,13 @@
+external/*
+!external/booster/
+outputs/
+.tools/
+.install/
+.cache/
+.player-update-backup-*/
+.update-backup-*/
+models/body_models/
+__pycache__/
+*.pyc
+.DS_Store
+inputs/videos/

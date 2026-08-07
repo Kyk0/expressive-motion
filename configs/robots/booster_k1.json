@@ -1,0 +1,8 @@
+{
+  "robot": "booster_k1",
+  "control": {
+    "control_rate_hz": 50,
+    "decimation": 4,
+    "sim_dt_s": 0.005
+  }
+}

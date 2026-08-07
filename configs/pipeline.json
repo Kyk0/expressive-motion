@@ -1,0 +1,45 @@
+{
+  "video": {
+    "resample_interpolate": false,
+    "min_duration_s": 0.7,
+    "max_duration_s": 600.0
+  },
+
+  "contacts": {
+    "source": "auto",
+    "gvhmr_probability_threshold": 0.8,
+    "min_gvhmr_coverage": 0.35,
+    "geometric_speed_threshold_mps": 0.12,
+    "geometric_height_percentile": 35.0
+  },
+
+  "ground": {
+    "enabled": true,
+    "level": true,
+    "cutoff_hz": 0.3,
+    "max_level_deg": 12.0,
+    "max_offset_m": 1.0,
+    "min_contact_coverage": 0.15,
+    "min_frames_for_timevarying": 45,
+    "min_frames_for_level": 25
+  },
+
+  "retarget": {
+    "auto_foot_offset": true,
+    "use_smplx_mesh_height": true
+  },
+
+  "train": {
+    "task_name_pattern": "{clip}",
+    "gym_id_pattern": "Booster-K1-{Clip}-v0",
+    "experiment_name_pattern": "k1_{clip}",
+    "save_interval": 100,
+    "max_iterations": 30000,
+    "episode_length_source": "motion_duration",
+    "template": "overlay/train/task_template"
+  },
+
+  "batch": {
+    "gvhmr_workers": 1
+  }
+}

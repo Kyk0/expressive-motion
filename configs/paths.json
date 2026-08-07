@@ -1,0 +1,19 @@
+{
+  "booster_train": "external/booster/booster_train",
+  "booster_assets": "external/booster/booster_assets",
+  "booster_deploy": "external/booster/booster_deploy",
+
+  "pinned_commits": {
+    "booster_train": "651b7a53f2ffaf2d5629d0604d065cc385e29c6b",
+    "booster_assets": "508cbee6ca9ae6fbc8c0b38dd58785a6f3fc61a2",
+    "booster_deploy": "563e7c37e7468b3b96ad9f84f9e61becea3b7fb8"
+  },
+
+  "subpaths": {
+    "motions_dir": "motions/K1",
+    "task_root": "source/booster_train/booster_train/tasks/manager_based/beyond_mimic/robots/k1",
+    "task_registry": "source/booster_train/booster_train/tasks/manager_based/beyond_mimic/robots/k1/__init__.py",
+    "train_script": "scripts/rsl_rl/train.py",
+    "csv_to_npz_script": "scripts/csv_to_npz.py"
+  }
+}
