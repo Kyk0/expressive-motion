@@ -3,14 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- Redirect target: edit the url= value below to point the QR code somewhere else. -->
-<meta http-equiv="refresh" content="0; url=https://github.com/Kyk0/expressive-motion">
 <title>Expressive Motion &mdash; Video</title>
+<style>
+  body { max-width: 46rem; margin: 0 auto; padding: 2rem 1.25rem;
+         font-family: system-ui, sans-serif; line-height: 1.55; }
+  video { width: 100%; display: block; background: #000; aspect-ratio: 16/9; }
+</style>
 </head>
 <body>
+
 <h1>Expressive Motion</h1>
-<p>Redirecting&hellip;</p>
-<p>If you are not redirected automatically, follow this link:
-<a href="https://github.com/Kyk0/expressive-motion">https://github.com/Kyk0/expressive-motion</a></p>
+<p>Monocular human-motion video to Booster K1 reference motion.</p>
+
+<video controls playsinline preload="metadata" poster="poster.jpg">
+  <source src="demo.mp4" type="video/mp4">
+  <a href="demo.mp4">Download the video</a>
+</video>
+
+<p><a href="https://github.com/Kyk0/expressive-motion">github.com/Kyk0/expressive-motion</a></p>
+
 </body>
 </html>
