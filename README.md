@@ -118,5 +118,24 @@ The command-line entry points are in `scripts/`;
 `scripts/expressive_motion/` contains internal helpers. Configuration is
 under `configs/`. Use `--help` for verified options.
 
+## Poster QR target
+
+`docs/` is published with GitHub Pages (source: branch `main`, folder `/docs`).
+The printed poster QR code encodes a stable URL that never changes:
+
+```text
+https://kyk0.github.io/expressive-motion/video/
+```
+
+`docs/video/index.html` is a redirect page, so the destination can be changed
+after the poster is printed. To retarget it, edit the `url=` value in:
+
+```html
+<meta http-equiv="refresh" content="0; url=https://github.com/Kyk0/expressive-motion">
+```
+
+Update the visible fallback `<a href>` in the same file to match, so browsers
+that block meta-refresh land in the same place.
+
 Do not commit inputs, outputs, checkpoints, licensed models, trained policies,
 or robot credentials.
