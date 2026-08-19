@@ -1,15 +1,20 @@
 [submodule "external/booster/booster_train"]
 	path = external/booster/booster_train
 	url = https://github.com/BoosterRobotics/booster_train.git
+	ignore = dirty
 [submodule "external/booster/booster_assets"]
 	path = external/booster/booster_assets
 	url = https://github.com/BoosterRobotics/booster_assets.git
+	ignore = dirty
 [submodule "external/booster/booster_deploy"]
 	path = external/booster/booster_deploy
 	url = https://github.com/BoosterRobotics/booster_deploy.git
+	ignore = dirty
 [submodule "external/GMR"]
 	path = external/GMR
 	url = https://github.com/YanjieZe/GMR.git
+	ignore = dirty
 [submodule "external/GVHMR"]
 	path = external/GVHMR
 	url = https://github.com/zju3dv/GVHMR.git
+	ignore = dirty
