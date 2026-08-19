@@ -36,8 +36,23 @@ GVHMR = ROOT / "external" / "GVHMR"
 GMR = ROOT / "external" / "GMR"
 GMR_PKL_TO_CSV = GMR / "scripts" / "batch_gmr_pkl_to_csv.py"
 CONDA_FILE = ROOT / ".install" / "conda_path"
-GVHMR_ENV = "expressive-motion-gvhmr"
-GMR_ENV = "expressive-motion-gmr"
+
+
+def _env_name(variable: str, state_file: str, default: str) -> str:
+    """Resolve a conda environment name: EM_* override, installer record, default."""
+    explicit = os.environ.get(variable)
+    if explicit:
+        return explicit
+    recorded = ROOT / ".install" / state_file
+    if recorded.is_file():
+        value = recorded.read_text(encoding="utf-8").strip()
+        if value:
+            return value
+    return default
+
+
+GVHMR_ENV = _env_name("EM_GVHMR_ENV", "gvhmr_env", "expressive-motion-gvhmr")
+GMR_ENV = _env_name("EM_GMR_ENV", "gmr_env", "expressive-motion-gmr")
 
 VIDEO_SUFFIXES = {".mp4", ".mov", ".m4v", ".avi", ".mkv", ".webm", ".mpg", ".mpeg"}
 
