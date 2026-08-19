@@ -39,7 +39,7 @@ CONDA_FILE = ROOT / ".install" / "conda_path"
 
 
 def _env_name(variable: str, state_file: str, default: str) -> str:
-    """Resolve a conda environment name: EM_* override, installer record, default."""
+    """Resolve a conda env name: EM_* override, then installer record, then default."""
     explicit = os.environ.get(variable)
     if explicit:
         return explicit
