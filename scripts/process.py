@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Prepare Booster reference motions from one or more input videos.
 
+Run inside the activated ``expressive-motion`` environment:
+
+    conda activate expressive-motion
+    python scripts/process.py inputs/videos/clip.mp4 --isaac-env env_isaaclab
+
 Each video is staged at 30 fps, processed by GVHMR, retargeted with GMR, and
 converted with the upstream GMR and Booster tools. Existing stage outputs are
 reused unless ``--force`` is passed, and failures are reported per input
@@ -15,6 +20,7 @@ from __future__ import annotations
 import argparse
 import concurrent.futures as futures
 import filecmp
+import importlib.util
 import json
 import os
 import shlex
@@ -35,24 +41,16 @@ ROOT = Path(__file__).resolve().parent.parent
 GVHMR = ROOT / "external" / "GVHMR"
 GMR = ROOT / "external" / "GMR"
 GMR_PKL_TO_CSV = GMR / "scripts" / "batch_gmr_pkl_to_csv.py"
-CONDA_FILE = ROOT / ".install" / "conda_path"
-
-
-def _env_name(variable: str, state_file: str, default: str) -> str:
-    """Resolve a conda env name: EM_* override, then installer record, then default."""
-    explicit = os.environ.get(variable)
-    if explicit:
-        return explicit
-    recorded = ROOT / ".install" / state_file
-    if recorded.is_file():
-        value = recorded.read_text(encoding="utf-8").strip()
-        if value:
-            return value
-    return default
-
-
-GVHMR_ENV = _env_name("EM_GVHMR_ENV", "gvhmr_env", "expressive-motion-gvhmr")
-GMR_ENV = _env_name("EM_GMR_ENV", "gmr_env", "expressive-motion-gmr")
+CHECKPOINTS = GVHMR / "inputs" / "checkpoints"
+REQUIRED_WEIGHTS = [
+    CHECKPOINTS / "body_models" / "smpl" / "SMPL_NEUTRAL.pkl",
+    CHECKPOINTS / "body_models" / "smplx" / "SMPLX_NEUTRAL.npz",
+    CHECKPOINTS / "gvhmr" / "gvhmr_siga24_release.ckpt",
+    CHECKPOINTS / "hmr2" / "epoch=10-step=25000.ckpt",
+    CHECKPOINTS / "vitpose" / "vitpose-h-multi-coco.pth",
+    CHECKPOINTS / "yolo" / "yolov8x.pt",
+    GMR / "assets" / "body_models" / "smplx" / "SMPLX_NEUTRAL.npz",
+]
 
 VIDEO_SUFFIXES = {".mp4", ".mov", ".m4v", ".avi", ".mkv", ".webm", ".mpg", ".mpeg"}
 
@@ -80,18 +78,18 @@ def safe_name(value: str) -> str:
 
 
 def conda_path() -> Path:
-    if CONDA_FILE.is_file():
-        value = CONDA_FILE.read_text(encoding="utf-8").strip()
-        if value:
-            return Path(value)
-    found = shutil.which("conda")
-    if found:
-        return Path(found)
-    raise SystemExit("Conda not found. Run bash install.sh first.")
+    found = os.environ.get("CONDA_EXE") or shutil.which("conda")
+    if not found:
+        raise SystemExit("conda not found. Activate the environment first: conda activate expressive-motion")
+    return Path(found)
 
 
-def isaac_command(conda: Path) -> list[str]:
-    """Return the explicitly configured Isaac-capable Python command."""
+def missing_weights() -> list[Path]:
+    return [path for path in REQUIRED_WEIGHTS if not path.is_file()]
+
+
+def isaac_command(conda: Path, environment: str | None) -> list[str]:
+    """Return the Python command for the Isaac Lab environment."""
     explicit = os.environ.get("EM_ISAAC_PYTHON")
     if explicit:
         python = Path(explicit).expanduser().resolve()
@@ -99,13 +97,12 @@ def isaac_command(conda: Path) -> list[str]:
             raise SystemExit(f"EM_ISAAC_PYTHON is not a file: {python}")
         return [str(python)]
 
-    environment = os.environ.get("EM_ISAAC_ENV")
     if environment:
         return [str(conda), "run", "--no-capture-output", "-n", environment, "python"]
 
     raise SystemExit(
-        "Booster CSV-to-NPZ conversion requires an Isaac-capable Python. "
-        "Set EM_ISAAC_PYTHON=/path/to/python or EM_ISAAC_ENV=<conda-env>."
+        "The last stage (CSV to NPZ) runs in Isaac Lab. "
+        "Pass --isaac-env <conda-env> or export EM_ISAAC_ENV=<conda-env>."
     )
 
 
@@ -211,6 +208,7 @@ def process_clip(
     output_root: Path,
     config: PipelineConfig,
     conda: Path,
+    gvhmr_env: str,
     isaac_prefix: list[str],
     booster: booster_paths.BoosterPaths,
     output_fps: int,
@@ -266,7 +264,7 @@ def process_clip(
 
         def gvhmr_command() -> list[str]:
             command = [
-                str(conda), "run", "--no-capture-output", "-n", GVHMR_ENV,
+                str(conda), "run", "--no-capture-output", "-n", gvhmr_env,
                 "python", "tools/demo/demo.py",
                 f"--video={staged}",
                 f"--output_root={gvhmr_dir}",
@@ -288,8 +286,7 @@ def process_clip(
         motion_file = data_dir / f"{name}_{robot}.pkl"
         if force or not motion_file.is_file():
             command = [
-                str(conda), "run", "--no-capture-output", "-n", GMR_ENV,
-                "python", str(ROOT / "scripts" / "retarget_gvhmr.py"),
+                sys.executable, str(ROOT / "scripts" / "retarget_gvhmr.py"),
                 "--gvhmr-result", str(gvhmr_result),
                 "--robot", robot,
                 "--output", str(motion_file),
@@ -314,8 +311,7 @@ def process_clip(
         ):
             run_logged(
                 [
-                    str(conda), "run", "--no-capture-output", "-n", GMR_ENV,
-                    "python", str(GMR_PKL_TO_CSV),
+                    sys.executable, str(GMR_PKL_TO_CSV),
                     "--folder", str(data_dir),
                 ],
                 ROOT,
@@ -370,9 +366,21 @@ def process_clip(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("inputs", nargs="+", type=Path, help="Video files or directories.")
     parser.add_argument("--robot", default="booster_k1")
+    parser.add_argument(
+        "--isaac-env",
+        default=os.environ.get("EM_ISAAC_ENV"),
+        help="Conda env with Isaac Lab, used for the last stage (default: $EM_ISAAC_ENV).",
+    )
+    parser.add_argument(
+        "--gvhmr-env",
+        default="expressive-motion-gvhmr",
+        help="Conda env GVHMR runs in (default: %(default)s).",
+    )
     parser.add_argument("--output-root", type=Path, default=ROOT / "outputs")
     parser.add_argument("--pipeline-config", type=Path, default=None)
     parser.add_argument("--set", dest="overrides", action="append", default=[])
@@ -391,6 +399,9 @@ def main() -> None:
         help="Do not mirror stage output to the terminal.",
     )
     args = parser.parse_args()
+
+    if not args.dry_run and importlib.util.find_spec("general_motion_retargeting") is None:
+        raise SystemExit("GMR is not importable here. Run: conda activate expressive-motion")
 
     config = PipelineConfig.load(args.pipeline_config, args.overrides)
     conda = conda_path()
@@ -416,7 +427,16 @@ def main() -> None:
                 )
             except Exception as exc:
                 print(f"  {video}  PROBE FAILED: {exc}")
+        for path in missing_weights():
+            print(f"  missing weight: {path.relative_to(ROOT)}")
         return
+
+    missing = missing_weights()
+    if missing:
+        raise SystemExit(
+            "Missing licensed weights (see README, Body Models and Weights):\n"
+            + "\n".join(f"  {path.relative_to(ROOT)}" for path in missing)
+        )
 
     try:
         booster = booster_paths.resolve_paths(
@@ -439,7 +459,7 @@ def main() -> None:
             "EM_BOOSTER_ROOT/--set paths.booster_assets."
         )
 
-    isaac_prefix = isaac_command(conda)
+    isaac_prefix = isaac_command(conda, args.isaac_env)
     output_fps = control_rate_hz(args.robot)
     print(
         f"Booster conversion: input=30 fps, output={output_fps} fps, "
@@ -458,6 +478,7 @@ def main() -> None:
             args.output_root,
             config,
             conda,
+            args.gvhmr_env,
             isaac_prefix,
             booster,
             output_fps,

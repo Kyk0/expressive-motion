@@ -2,7 +2,6 @@ external/*
 !external/booster/
 outputs/
 .tools/
-.install/
 .cache/
 .player-update-backup-*/
 .update-backup-*/

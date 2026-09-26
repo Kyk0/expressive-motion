@@ -25,7 +25,7 @@ Kyrylo Kolesnichenko<sup>1,2</sup> · Irvin Steve Cardenas<sup>1</sup> · Jong-H
 
 </div>
 
-Expressive Motion turns a single monocular video of a person walking into a Booster K1 reference motion and a ready-to-train BeyondMimic task. It connects pinned GVHMR, GMR and Booster checkouts into one `em` command; training and deployment stay manual upstream operations.
+Expressive Motion turns a single monocular video of a person walking into a Booster K1 reference motion and a ready-to-train BeyondMimic task. It connects pinned GVHMR, GMR and Booster checkouts into one script; training and deployment stay manual upstream operations.
 
 On the physical K1, the learned catwalk policy completed **20 of 20 trials without a fall** (≈23 steps each) and walked with a step width of **−0.8 to 1.8 cm**, against 5.1 to 11.4 cm for the stock K1 gait, including occasional crossover steps.
 
@@ -65,63 +65,37 @@ Isaac Lab, the SMPL/SMPL-X body models, the GVHMR checkpoints and the Booster SD
 ```bash
 git clone --recursive https://github.com/Kyk0/expressive-motion.git
 cd expressive-motion
+bash install.sh                  # creates the conda environments
+# add the licensed body models and checkpoints, see below
 
-# Asks which components to install, then puts `em` on your PATH
-bash install.sh
-
-# Add the licensed body models and checkpoints — see below
-em doctor
-
-export EM_ISAAC_ENV=your_isaac_conda_env
-em process inputs/videos/ai1.mp4
+conda activate expressive-motion
+python scripts/process.py inputs/videos/ai1.mp4 --isaac-env YOUR_ISAAC_ENV
+python scripts/make_task.py --clip ai1
 ```
 
 ## Installation
 
-The installer builds three independent components. Run it with no arguments for an interactive prompt, or choose explicitly:
+`bash install.sh` initialises the submodules and creates two conda environments:
 
-```bash
-bash install.sh --list                    # what is available
-bash install.sh --components gmr          # retargeting only, no GPU needed
-bash install.sh --components gmr,gvhmr    # both processing environments
-bash install.sh --yes --isaac-env env_isaaclab
-bash install.sh --skip gvhmr
-```
-
-| Component | Creates | Purpose |
-| --- | --- | --- |
-| `gmr` | env `expressive-motion-gmr` | Retargeting, CSV conversion, pipeline driver |
-| `gvhmr` | env `expressive-motion-gvhmr` | GVHMR inference. Needs a CUDA GPU |
-| `isaac` | nothing new | Adds Booster packages to **your existing** Isaac Lab env |
-
-The `isaac` component never installs Isaac Lab itself — name your existing environment with `--isaac-env NAME` or `--isaac-python /path/to/python`.
-
-```bash
-bash install.sh --check          # validate, install nothing (same as `em doctor`)
-bash install.sh --clean          # remove the envs, after confirming
-bash install.sh --no-submodules  # use checkouts you populated yourself
-bash install.sh --no-link        # do not put `em` on PATH
-bash install.sh --help
-```
-
-Re-running skips components whose inputs have not changed and repairs any whose previous run died partway. Each run logs to `.install/`.
-
-### The `em` command
-
-The installer symlinks `em` into `~/.local/bin` (override with `EM_BIN_DIR`), so it works from any directory. If that directory is not on your PATH the installer tells you how to add it. Without the symlink, `./em` from the repository root behaves identically.
-
-### Environment Variables
-
-| Variable | Purpose |
+| Environment | What it is for |
 | --- | --- |
-| `EM_ISAAC_ENV` / `EM_ISAAC_PYTHON` | Where Isaac Lab lives. Required by the last stage of `em process` |
-| `EM_GMR_ENV` / `EM_GVHMR_ENV` | Override the conda environment names |
-| `EM_BOOSTER_ROOT` | Override the Booster checkout root |
-| `EM_BIN_DIR` | Where to symlink `em` |
+| `expressive-motion` | The one you activate. Retargeting, CSV conversion, task generation |
+| `expressive-motion-gvhmr` | GVHMR inference, needs a CUDA GPU. Called for you by `process.py`; you never activate it |
+
+They are separate because GVHMR and GMR pin incompatible dependencies.
+
+```bash
+bash install.sh                        # both environments
+bash install.sh main                   # expressive-motion only (no GPU needed)
+bash install.sh gvhmr                  # expressive-motion-gvhmr only
+bash install.sh isaac env_isaaclab     # add Booster packages to your Isaac Lab env
+```
+
+Re-running is safe: existing environments are reused and packages reinstalled. Isaac Lab itself is never installed; the `isaac` target only adds `booster_assets` and `booster_train` to an environment you already have.
 
 ## Body Models and Weights
 
-This is the step that usually blocks a fresh install. About **5.2 GB** total. The installer reports what is missing but cannot download any of it.
+This is the step that usually blocks a fresh install. About **5.2 GB** total. Nothing here can be downloaded automatically.
 
 ### 1. Register for the body models
 
@@ -175,31 +149,30 @@ ln -s "$(pwd)/external/GVHMR/inputs/checkpoints/body_models/smplx/SMPLX_NEUTRAL.
 ### 4. Verify
 
 ```bash
-em doctor
+python scripts/process.py inputs/videos --dry-run
 ```
 
-Each required checkpoint is listed `OK` or `missing`. Missing weights are a warning rather than a failure, so read the list instead of relying on the exit code.
+lists any weight that is still missing. A full run refuses to start until they are all present.
 
 **⚠️ Never commit these files.** They are non-commercial licensed. Three separate `.gitignore` files cover them, and because `external/GMR` and `external/GVHMR` are submodules the parent repository structurally cannot contain them. The real risk is `git add` *inside* a submodule.
 
 ## Usage
 
-`em` picks the right conda environment for each entry point. Flags after the command pass straight through, so `em process --help` lists that stage's options.
+Activate the environment once per terminal, then run the scripts directly. Every script has `--help`.
 
 ```bash
-em process inputs/videos/ai1.mp4 --dry-run   # probe only, runs nothing
-em process inputs/videos/ai1.mp4             # full pipeline
-em process inputs/videos --recursive         # a whole tree
-em process inputs/videos/ai1.mp4 --force     # recompute existing stages
+conda activate expressive-motion
 
-em task --clip ai1                           # generate and register a task
-em task --clip ai1 --dry-run
+python scripts/process.py inputs/videos/ai1.mp4 --dry-run   # probe only, runs nothing
+python scripts/process.py inputs/videos/ai1.mp4             # full pipeline
+python scripts/process.py inputs/videos --recursive         # a whole tree
+python scripts/process.py inputs/videos/ai1.mp4 --force     # recompute existing stages
 
-em doctor      # validate the installation
-em versions    # environments and key package versions
-em robots      # robots GMR can retarget onto
-em shell gmr   # a shell inside an environment
+python scripts/make_task.py --clip ai1                      # generate and register a task
+python scripts/retarget_gvhmr.py --list-robots              # robots GMR can retarget onto
 ```
+
+The last stage of `process.py` converts the motion inside Isaac Lab. Name that environment with `--isaac-env`, or once per shell with `export EM_ISAAC_ENV=env_isaaclab`.
 
 `ai1.mp4` produces motion name `ai1`. Completed stages are reused unless `--force` is given, logs land in `outputs/<clip>/logs/`, and one failing clip does not abort a batch.
 
@@ -212,7 +185,7 @@ outputs/ai1/robot_data/booster_k1/csv/ai1_booster_k1.csv   # joint CSV
 external/booster/booster_assets/motions/K1/ai1.{csv,npz}   # installed motion
 ```
 
-`em task` renders the template into Booster Train, registers it, and **prints but does not run** the training command. The default task id is `Booster-K1-Ai1-v0`.
+`make_task.py` renders the template into Booster Train, registers it, and **prints but does not run** the training command. The default task id is `Booster-K1-Ai1-v0`.
 
 ### Training and deployment
 
@@ -241,24 +214,15 @@ Configuration lives in `configs/` and resolves relative to the repository, not t
 | `configs/robots/booster_k1.json` | Robot control rate and joints |
 
 ```bash
-em process inputs/videos/ai1.mp4 --set ground.enabled=false
-em task --clip ai1 --set train.max_iterations=15000
+python scripts/process.py inputs/videos/ai1.mp4 --set ground.enabled=false
+python scripts/make_task.py --clip ai1 --set train.max_iterations=15000
 ```
 
 ## Troubleshooting
 
-**`conda environment "expressive-motion-gmr" is missing`**
+**`GMR is not importable here. Run: conda activate expressive-motion`**
 
-```bash
-bash install.sh --components gmr
-```
-
-**`em: command not found`**
-
-```bash
-# ~/.local/bin is not on your PATH
-echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc && source ~/.bashrc
-```
+The environment is not active in this terminal, or was never created (`bash install.sh main`).
 
 **`ModuleNotFoundError: No module named 'pkg_resources'`**
 
@@ -267,19 +231,18 @@ echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc && source ~/.bashrc
 conda run -n expressive-motion-gvhmr python -m pip install 'setuptools<81'
 ```
 
-The installer pins this correctly; a later `pip install --upgrade setuptools` reintroduces it. `em doctor` detects it.
+The installer pins this correctly; a later `pip install --upgrade setuptools` reintroduces it.
 
-**`Booster CSV-to-NPZ conversion requires an Isaac-capable Python`**
+**`The last stage (CSV to NPZ) runs in Isaac Lab`**
 
-```bash
-export EM_ISAAC_ENV=your_isaac_conda_env
-```
+Pass `--isaac-env your_isaac_conda_env`, or `export EM_ISAAC_ENV=your_isaac_conda_env`.
 
 **GVHMR fails with a CUDA or missing-file error**
 
 ```bash
-em versions   # gvhmr should report: cuda 12.1 | available True
-em doctor     # lists any absent checkpoint
+conda run -n expressive-motion-gvhmr python -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
+# expect: 12.1 True
+python scripts/process.py inputs/videos --dry-run   # lists any absent checkpoint
 ```
 
 **Pinned Booster commit mismatch**
@@ -293,7 +256,7 @@ git submodule update --init --recursive
 ## Known Limitations
 
 1. **Static camera only.** Moving-camera clips need the DPVO path, which is not wired up.
-2. **One robot.** The complete path supports `booster_k1`; GMR itself supports more (`em robots`).
+2. **One robot.** The complete path supports `booster_k1`; GMR itself supports more (`--list-robots`).
 3. **Booster checkouts are modified in place.** Generated tasks live inside the submodules, so they always show as dirty in `git status`.
 4. **The GVHMR environment is frozen.** Python 3.10, torch 2.3.0, cu121 and numpy 1.23.5 are mutually load-bearing, and the pinned `pytorch3d` wheel installs without complaint when they no longer match.
 5. **`--dry-run` skips the Booster and Isaac preflight checks**, so it can pass where a full run would not.
@@ -302,11 +265,10 @@ git submodule update --init --recursive
 
 ```text
 expressive-motion/
-├── em                          # launcher: em <command>
-├── install.sh                  # component-based installer
+├── install.sh                  # creates the conda environments
 ├── configs/                    # paths, pipeline and robot configuration
 ├── scripts/
-│   ├── batch_process.py        # video to installed Booster motion
+│   ├── process.py              # video to installed Booster motion
 │   ├── make_task.py            # task generation
 │   ├── retarget_gvhmr.py       # single-clip retargeting
 │   └── expressive_motion/      # internal helpers

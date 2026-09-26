@@ -129,17 +129,18 @@
   <section>
     <h2 class="center">Run it yourself</h2>
     <p class="lead center" style="margin-bottom:1.25rem">
-      The repository wires pinned GVHMR, GMR and Booster checkouts into a single <code>em</code> command.
+      The repository wires pinned GVHMR, GMR and Booster checkouts into one script.
       Needs x86_64 Linux, Conda and an NVIDIA GPU.
     </p>
     <div class="copyable">
       <button class="copy" type="button" data-copy="quickstart">Copy</button>
 <pre id="quickstart"><code>git clone --recursive https://github.com/Kyk0/expressive-motion.git
 cd expressive-motion
-bash install.sh            # choose components, puts `em` on PATH
-em doctor                  # after adding the licensed body models
-em process inputs/videos/clip.mp4
-em task --clip clip        # generate the Booster training task</code></pre>
+bash install.sh                 # creates the conda environments
+
+conda activate expressive-motion
+python scripts/process.py inputs/videos/clip.mp4 --isaac-env env_isaaclab
+python scripts/make_task.py --clip clip</code></pre>
     </div>
     <p class="note center">Full setup, body-model download steps and troubleshooting are in the <a href="https://github.com/Kyk0/expressive-motion#readme">README</a>.</p>
   </section>
