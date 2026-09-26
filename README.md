@@ -1,11 +1,33 @@
+<div align="center">
+
 # Expressive Motion
 
-![Platform](https://img.shields.io/badge/Platform-Ubuntu%20x86__64-brightgreen)
-![Python](https://img.shields.io/badge/Python-3.10-blue)
-![CUDA](https://img.shields.io/badge/CUDA-12.1-green)
-![License](https://img.shields.io/badge/Code-MIT-lightgrey)
+**Learning Expressive Humanoid Locomotion from Monocular Runway Videos**
 
-Expressive Motion converts a monocular human-motion video into a Booster K1 reference motion. It connects pinned GVHMR, GMR and Booster checkouts into one pipeline; training and deployment remain manual upstream operations.
+Kyrylo Kolesnichenko<sup>1,2</sup> · Irvin Steve Cardenas<sup>1</sup> · Jong-Hoon Kim<sup>1</sup>
+
+<sup>1</sup> Advanced Telerobotics Research Laboratory, Kent State University · <sup>2</sup> Vilnius University
+
+[**Project page**](https://kyk0.github.io/expressive-motion/) ·
+[**Paper**](paper/Expressive_Humanoid_Locomotion.pdf) ·
+[**Poster**](docs/video/expressive-motion_poster.pdf) ·
+[**Video**](https://kyk0.github.io/expressive-motion/video/)
+
+![Platform](https://img.shields.io/badge/platform-Ubuntu%20x86__64-brightgreen)
+![Python](https://img.shields.io/badge/python-3.10-blue)
+![CUDA](https://img.shields.io/badge/CUDA-12.1-76b900)
+![Robot](https://img.shields.io/badge/robot-Booster%20K1-black)
+[![License](https://img.shields.io/badge/code-MIT-lightgrey)](LICENSE)
+
+<img src="docs/assets/pipeline.jpg" width="880" alt="Runway video, recovered 3D human motion, retargeted K1 in simulation, and the physical Booster K1">
+
+<sub>(A) monocular runway video → (B) recovered 3D human motion → (C) retargeted motion in simulation → (D) physical Booster K1</sub>
+
+</div>
+
+Expressive Motion turns a single monocular video of a person walking into a Booster K1 reference motion and a ready-to-train BeyondMimic task. It connects pinned GVHMR, GMR and Booster checkouts into one `em` command; training and deployment stay manual upstream operations.
+
+On the physical K1, the learned catwalk policy completed **20 of 20 trials without a fall** (≈23 steps each) and walked with a step width of **−0.8 to 1.8 cm**, against 5.1 to 11.4 cm for the stock K1 gait, including occasional crossover steps.
 
 ## Overview
 
@@ -41,9 +63,8 @@ Isaac Lab, the SMPL/SMPL-X body models, the GVHMR checkpoints and the Booster SD
 ## Quick Start
 
 ```bash
-git clone <this-repo> expressive-motion
+git clone --recursive https://github.com/Kyk0/expressive-motion.git
 cd expressive-motion
-git submodule update --init --recursive
 
 # Asks which components to install, then puts `em` on your PATH
 bash install.sh
@@ -290,6 +311,8 @@ expressive-motion/
 │   ├── retarget_gvhmr.py       # single-clip retargeting
 │   └── expressive_motion/      # internal helpers
 ├── overlay/train/task_template # rendered into booster_train
+├── paper/                      # LaTeX source, figure and PDF
+├── docs/                       # GitHub Pages project page
 ├── external/                   # pinned upstream submodules
 │   ├── GVHMR/                  # monocular motion recovery
 │   ├── GMR/                    # motion retargeting
@@ -301,24 +324,20 @@ expressive-motion/
 
 Do not commit inputs, outputs, checkpoints, licensed models, trained policies or robot credentials.
 
-## Poster QR target
+## Project page
 
-`docs/` is published with GitHub Pages (source: branch `main`, folder `/docs`).
-The printed poster QR code encodes a stable URL that never changes:
+`docs/` is served by GitHub Pages from branch `main`, folder `/docs`:
 
-```text
-https://kyk0.github.io/expressive-motion/video/
+| URL | Source | Purpose |
+| --- | --- | --- |
+| https://kyk0.github.io/expressive-motion/ | `docs/index.html` | Project page |
+| https://kyk0.github.io/expressive-motion/video/ | `docs/video/index.html` | Poster QR target, video-first for phones |
+
+The poster QR code encodes the `/video/` URL, so it must keep resolving. To change the clip without reprinting, replace `docs/video/demo.mp4` (H.264 MP4, keep it under ~20 MB) and regenerate the still frame:
+
+```bash
+ffmpeg -y -ss 1 -i docs/video/demo.mp4 -frames:v 1 -q:v 4 docs/video/poster.jpg
 ```
-
-`docs/video/index.html` is a redirect page, so the destination can be changed
-after the poster is printed. To retarget it, edit the `url=` value in:
-
-```html
-<meta http-equiv="refresh" content="0; url=https://github.com/Kyk0/expressive-motion">
-```
-
-Update the visible fallback `<a href>` in the same file to match, so browsers
-that block meta-refresh land in the same place.
 
 ## License
 
@@ -340,4 +359,19 @@ The code in this repository is MIT licensed — see [LICENSE](LICENSE).
 
 GMR ships robot assets under mixed licences; `fourier_n1` is LGPL-3.0 and `external/GMR/third_party/poselib` carries no licence file. Neither affects the `booster_k1` path.
 
-If you use this work, please cite GVHMR and GMR as their authors request.
+## Citation
+
+```bibtex
+@misc{kolesnichenko2026expressive,
+  title  = {Learning Expressive Humanoid Locomotion from Monocular Runway Videos},
+  author = {Kolesnichenko, Kyrylo and Cardenas, Irvin Steve and Kim, Jong-Hoon},
+  year   = {2026},
+  url    = {https://github.com/Kyk0/expressive-motion}
+}
+```
+
+Please also cite [GVHMR](https://github.com/zju3dv/GVHMR), [GMR](https://github.com/YanjieZe/GMR) and [BeyondMimic](https://beyondmimic.github.io/) as their authors request.
+
+## Acknowledgements
+
+Built on [GVHMR](https://github.com/zju3dv/GVHMR), [GMR](https://github.com/YanjieZe/GMR), [BeyondMimic](https://beyondmimic.github.io/) and the [Booster Robotics](https://github.com/BoosterRobotics) training, deployment and asset repositories.

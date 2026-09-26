@@ -3,24 +3,200 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Expressive Motion</title>
-<style>
-  body { max-width: 46rem; margin: 0 auto; padding: 2rem 1.25rem;
-         font-family: system-ui, sans-serif; line-height: 1.55; }
-  video { width: 100%; display: block; background: #000; aspect-ratio: 16/9; }
-</style>
+<title>Expressive Humanoid Locomotion</title>
+<meta name="description" content="An end-to-end pipeline that turns a single monocular runway video into a deployable Booster K1 humanoid walking policy.">
+<meta name="theme-color" content="#111215">
+<link rel="canonical" href="https://kyk0.github.io/expressive-motion/">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Learning Expressive Humanoid Locomotion from Monocular Runway Videos">
+<meta property="og:description" content="From one runway video to a catwalk policy running on a physical Booster K1 humanoid.">
+<meta property="og:url" content="https://kyk0.github.io/expressive-motion/">
+<meta property="og:image" content="https://kyk0.github.io/expressive-motion/assets/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 
-<h1>Expressive Motion</h1>
-<p>Monocular human-motion video to Booster K1 reference motion.</p>
+<header class="hero wrap">
+  <h1>Learning Expressive Humanoid Locomotion from Monocular Runway Videos</h1>
+  <p class="authors">
+    Kyrylo Kolesnichenko<sup>1,2</sup> &middot;
+    Irvin Steve Cardenas<sup>1</sup> &middot;
+    Jong-Hoon Kim<sup>1</sup>
+  </p>
+  <p class="affil"><span><sup>1</sup> Advanced Telerobotics Research Laboratory, Kent State University</span><span><sup>2</sup> Vilnius University</span></p>
 
-<video controls playsinline preload="metadata" poster="video/poster.jpg">
-  <source src="video/demo.mp4" type="video/mp4">
-  <a href="video/demo.mp4">Download the video</a>
-</video>
+  <ul class="links">
+    <li><a class="btn" href="https://github.com/Kyk0/expressive-motion/blob/main/paper/Expressive_Humanoid_Locomotion.pdf">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM8 13h8v2H8zm0 4h8v2H8zm0-8h3v2H8z"/></svg>
+      Paper</a></li>
+    <li><a class="btn" href="https://github.com/Kyk0/expressive-motion">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.7 5.38-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+      Code</a></li>
+    <li><a class="btn ghost" href="video/">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+      Video</a></li>
+    <li><a class="btn ghost" href="video/expressive-motion_poster.pdf">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v12H3zm2 2v8h14V6zm3 12h8v2H8z"/></svg>
+      Poster</a></li>
+  </ul>
+</header>
 
-<p><a href="https://github.com/Kyk0/expressive-motion">github.com/Kyk0/expressive-motion</a></p>
+<main class="wrap">
 
+  <section>
+    <figure class="media">
+      <video controls playsinline muted loop preload="metadata" poster="video/poster.jpg">
+        <source src="video/demo.mp4" type="video/mp4">
+        <a href="video/demo.mp4">Download the video</a>
+      </video>
+    </figure>
+  </section>
+
+  <section>
+    <h2 class="center">Abstract</h2>
+    <p class="lead">
+      Runway walking uses posture, stride, and foot placement to present clothing and express a
+      particular style. However, humanoid robots in fashion shows usually use walking policies
+      designed mainly for balance and speed. We present an end-to-end pipeline that converts a
+      monocular runway video into a deployable humanoid policy through motion recovery, robot
+      retargeting, motion correction, policy training, simulation testing, and physical deployment.
+      We evaluate the pipeline on the Booster K1 using a runway-style motion. The learned policy
+      completed all 20 physical trials without falling and reproduced narrow foot placement together
+      with coordinated leg, torso, and arm movements. Its measured step width ranged from &minus;0.8
+      to 1.8&nbsp;cm, compared with 5.1 to 11.4&nbsp;cm for the standard K1 walk, and included
+      occasional crossover steps.
+    </p>
+  </section>
+
+  <section>
+    <h2 class="center">From video to a running policy</h2>
+    <figure>
+      <img class="figure-img" src="assets/pipeline.jpg" width="1119" height="466" loading="lazy"
+           alt="Four panels: a person walking on a runway, the recovered 3D body mesh, the retargeted K1 robot in simulation, and the physical Booster K1 walking.">
+      <figcaption>(A) Monocular runway video &nbsp;&rarr;&nbsp; (B) recovered 3D human motion &nbsp;&rarr;&nbsp; (C) retargeted motion in simulation &nbsp;&rarr;&nbsp; (D) physical Booster K1.</figcaption>
+    </figure>
+
+    <ol class="steps">
+      <li><h3>Motion recovery</h3><p>GVHMR lifts a single static-camera video into world-grounded SMPL-X body motion.</p></li>
+      <li><h3>Ground correction</h3><p>Foot contacts snap the motion to a level floor and remove root drift without changing joint angles.</p></li>
+      <li><h3>Retargeting</h3><p>GMR maps the human skeleton onto the Booster K1&rsquo;s joints.</p></li>
+      <li><h3>Policy training</h3><p>A BeyondMimic tracking task is generated and trained in Isaac Lab.</p></li>
+      <li><h3>Sim-to-sim</h3><p>The exported policy is checked in MuJoCo with the deployment controller.</p></li>
+      <li><h3>Hardware</h3><p>The same policy runs on the K1 with identical actuator limits, stiffness and damping.</p></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2 class="center">Results on the physical robot</h2>
+    <div class="results">
+      <div class="card">
+        <div class="stat">20/20</div>
+        <p class="stat-label">physical trials completed without a fall, about 23 steps each along a 5&nbsp;m runway.</p>
+      </div>
+      <div class="card">
+        <h3>Step width between consecutive foot placements</h3>
+        <svg class="chart" viewBox="0 0 560 200" role="img"
+             aria-label="Step width range: standard K1 walk 5.1 to 11.4 cm; learned catwalk policy minus 0.8 to 1.8 cm.">
+          <line class="zero" x1="205.7" y1="20" x2="205.7" y2="150"/>
+          <line class="axis" x1="150" y1="150" x2="540" y2="150"/>
+          <g class="tick" text-anchor="middle">
+            <text x="150" y="168">&minus;2</text><text x="205.7" y="168">0</text>
+            <text x="261.4" y="168">2</text><text x="317.1" y="168">4</text>
+            <text x="372.9" y="168">6</text><text x="428.6" y="168">8</text>
+            <text x="484.3" y="168">10</text><text x="540" y="168">12</text>
+            <text x="345" y="192">step width (cm) &middot; negative = crossover</text>
+          </g>
+
+          <text class="label" x="0" y="50">Standard K1 walk</text>
+          <text class="sub" x="0" y="66">n = 12 steps</text>
+          <line class="bar-std" x1="347.8" y1="54" x2="523.3" y2="54" stroke-width="8" stroke-linecap="round"/>
+          <text class="val-std" x="347.8" y="40" text-anchor="middle">5.1</text>
+          <text class="val-std" x="523.3" y="40" text-anchor="middle">11.4</text>
+
+          <text class="label" x="0" y="110">Catwalk policy</text>
+          <text class="sub" x="0" y="126">n = 23 steps</text>
+          <line class="bar-cat" x1="183.4" y1="114" x2="255.9" y2="114" stroke-width="8" stroke-linecap="round"/>
+          <text class="val-cat" x="183.4" y="100" text-anchor="middle">&minus;0.8</text>
+          <text class="val-cat" x="255.9" y="100" text-anchor="middle">1.8</text>
+        </svg>
+        <p class="note">The learned policy walks with much narrower foot placement than the stock gait, and sometimes crosses over.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="center">Run it yourself</h2>
+    <p class="lead center" style="margin-bottom:1.25rem">
+      The repository wires pinned GVHMR, GMR and Booster checkouts into a single <code>em</code> command.
+      Needs x86_64 Linux, Conda and an NVIDIA GPU.
+    </p>
+    <div class="copyable">
+      <button class="copy" type="button" data-copy="quickstart">Copy</button>
+<pre id="quickstart"><code>git clone --recursive https://github.com/Kyk0/expressive-motion.git
+cd expressive-motion
+bash install.sh            # choose components, puts `em` on PATH
+em doctor                  # after adding the licensed body models
+em process inputs/videos/clip.mp4
+em task --clip clip        # generate the Booster training task</code></pre>
+    </div>
+    <p class="note center">Full setup, body-model download steps and troubleshooting are in the <a href="https://github.com/Kyk0/expressive-motion#readme">README</a>.</p>
+  </section>
+
+  <section>
+    <div class="two">
+      <div>
+        <h2>Citation</h2>
+        <div class="copyable">
+          <button class="copy" type="button" data-copy="bibtex">Copy</button>
+<pre id="bibtex"><code>@misc{kolesnichenko2026expressive,
+  title  = {Learning Expressive Humanoid Locomotion
+            from Monocular Runway Videos},
+  author = {Kolesnichenko, Kyrylo and Cardenas, Irvin Steve
+            and Kim, Jong-Hoon},
+  year   = {2026},
+  url    = {https://github.com/Kyk0/expressive-motion}
+}</code></pre>
+        </div>
+      </div>
+      <div>
+        <h2>Poster</h2>
+        <a class="poster-link" href="video/expressive-motion_poster.pdf">
+          <img src="assets/poster-thumb.jpg" width="1020" height="681" loading="lazy" alt="Conference poster for the project">
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="credits">
+    <h2>Acknowledgements</h2>
+    This work builds directly on:
+    <ul>
+      <li><a href="https://github.com/zju3dv/GVHMR">GVHMR</a> &mdash; world-grounded human motion recovery</li>
+      <li><a href="https://github.com/YanjieZe/GMR">GMR</a> &mdash; general motion retargeting</li>
+      <li><a href="https://beyondmimic.github.io/">BeyondMimic</a> &mdash; motion tracking policies</li>
+      <li><a href="https://github.com/BoosterRobotics">Booster Robotics</a> &mdash; booster_train, booster_deploy and booster_assets</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <p>Advanced Telerobotics Research Laboratory &middot; Kent State University</p>
+  <p>Code MIT licensed. The full pipeline is for research and non-profit use &mdash; see the <a href="https://github.com/Kyk0/expressive-motion#license">licence notes</a>.</p>
+</footer>
+
+<script>
+  document.querySelectorAll('.copy').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var text = document.getElementById(button.dataset.copy).innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        button.textContent = 'Copied';
+        setTimeout(function () { button.textContent = 'Copy'; }, 1400);
+      }).catch(function () {});
+    });
+  });
+</script>
 </body>
 </html>
